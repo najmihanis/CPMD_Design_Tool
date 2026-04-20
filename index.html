@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dual Crank-Slider Design Tool</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark"></div>
+            <div>
+                <h1>Dual Crank-Slider Design Tool</h1>
+                <p class="subtitle">Interactive parameter explorer for the coupled crank-slider mechanism</p>
+            </div>
+        </div>
+        <div class="topbar-actions">
+            <span id="status-pill" class="status-pill ready">Ready</span>
+        </div>
+    </header>
+
+    <main class="dashboard">
+        <!-- ============== LEFT: USER INPUTS ============== -->
+        <aside class="panel inputs-panel">
+            <h2 class="panel-title">Design Inputs</h2>
+
+            <section class="input-group">
+                <h3>Range of Motion (B-side)</h3>
+                <label>
+                    <span>Smallest Δφ (deg)</span>
+                    <input type="number" id="deltaPhiMin" value="40" step="1" />
+                </label>
+                <label>
+                    <span>Largest Δφ (deg)</span>
+                    <input type="number" id="deltaPhiMax" value="100" step="1" />
+                </label>
+                <label>
+                    <span>Number of cases</span>
+                    <input type="number" id="nSteps" value="5" min="2" max="10" step="1" />
+                </label>
+            </section>
+
+            <section class="input-group">
+                <h3>B-side Hard Stops</h3>
+                <label>
+                    <span>φ<sub>stop,min</sub> (deg)</span>
+                    <input type="number" id="phiStopMin" value="35" step="1" />
+                </label>
+                <label>
+                    <span>φ<sub>stop,max</sub> (deg)</span>
+                    <input type="number" id="phiStopMax" value="170" step="1" />
+                </label>
+                <label>
+                    <span>Baseline φ (deg)</span>
+                    <input type="number" id="phiBaseline" value="90" step="1" />
+                </label>
+            </section>
+
+            <section class="input-group">
+                <h3>r<sub>B</sub> Search Range</h3>
+                <label>
+                    <span>r<sub>B</sub> min</span>
+                    <input type="number" id="rBmin" value="1.5" step="0.1" />
+                </label>
+                <label>
+                    <span>r<sub>B</sub> max</span>
+                    <input type="number" id="rBmax" value="8.0" step="0.1" />
+                </label>
+                <label>
+                    <span>r<sub>B</sub> step</span>
+                    <input type="number" id="rBstep" value="0.1" step="0.05" />
+                </label>
+            </section>
+
+            <section class="input-group">
+                <h3>λ<sub>B</sub> = l<sub>B</sub> / r<sub>B</sub> Search Range</h3>
+                <label>
+                    <span>λ<sub>B</sub> min</span>
+                    <input type="number" id="lambdaBmin" value="2.0" step="0.05" />
+                </label>
+                <label>
+                    <span>λ<sub>B</sub> max</span>
+                    <input type="number" id="lambdaBmax" value="8.0" step="0.05" />
+                </label>
+                <label>
+                    <span>λ<sub>B</sub> step</span>
+                    <input type="number" id="lambdaBstep" value="0.05" step="0.01" />
+                </label>
+            </section>
+
+            <details class="input-group advanced">
+                <summary>Advanced Settings</summary>
+                <label>
+                    <span>Margin factor</span>
+                    <input type="number" id="marginFactor" value="0.2667" step="0.001" />
+                </label>
+                <label>
+                    <span>d margin factor</span>
+                    <input type="number" id="dMarginFactor" value="0.10" step="0.01" />
+                </label>
+                <label>
+                    <span>Max drift (largest ROM, deg)</span>
+                    <input type="number" id="maxDrift" value="30" step="1" />
+                </label>
+                <label>
+                    <span>Max drift (smallest ROM, deg)</span>
+                    <input type="number" id="maxSmallDrift" value="0.5" step="0.1" />
+                </label>
+                <label>
+                    <span>w<sub>baseline</sub></span>
+                    <input type="number" id="wBaseline" value="1.0" step="0.1" />
+                </label>
+                <label>
+                    <span>w<sub>prev</sub></span>
+                    <input type="number" id="wPrev" value="1.0" step="0.1" />
+                </label>
+                <label>
+                    <span>w<sub>stroke</sub></span>
+                    <input type="number" id="wStroke" value="0.10" step="0.01" />
+                </label>
+                <label>
+                    <span>Center scan resolution</span>
+                    <input type="number" id="nCenterScan" value="600" step="50" />
+                </label>
+                <label>
+                    <span>Preferred θ<sub>A</sub> (deg)</span>
+                    <input type="number" id="preferredThetaA" value="110" step="1" />
+                </label>
+            </details>
+
+            <button id="suggestBtn" class="primary-btn">Suggest Design</button>
+            <p id="searchMsg" class="search-msg"></p>
+        </aside>
+
+        <!-- ============== CENTER: CANVAS + TABLE ============== -->
+        <div class="center-column">
+            <section class="panel canvas-panel">
+                <div class="canvas-header">
+                    <h2 class="panel-title">Mechanism Visualization</h2>
+                    <div class="case-tabs" id="caseTabs"></div>
+                </div>
+
+                <div class="canvas-wrap">
+                    <canvas id="vizCanvas" width="900" height="520"></canvas>
+                </div>
+
+                <div class="canvas-controls">
+                    <button id="playBtn" class="secondary-btn" disabled>▶ Play 2 Hz</button>
+                    <div class="phi-display">
+                        <span class="lbl">θ<sub>A</sub>:</span>
+                        <span id="thetaADisp">—</span>
+                        <span class="lbl">φ<sub>B</sub>:</span>
+                        <span id="phiBDisp">—</span>
+                        <span class="lbl">x<sub>slider</sub>:</span>
+                        <span id="xSliderDisp">—</span>
+                    </div>
+                </div>
+
+                <div class="legend-row">
+                    <span class="lg-item"><span class="sw" style="background:#fb9090"></span>Allowable ROM (B)</span>
+                    <span class="lg-item"><span class="sw" style="background:#ffd147"></span>Selected ROM</span>
+                    <span class="lg-item"><span class="sw" style="background:#e65a1a"></span>Crank B set</span>
+                    <span class="lg-item"><span class="sw" style="background:#27a042"></span>Crank A set</span>
+                    <span class="lg-item"><span class="sw" style="background:#bfd7ff"></span>Slider stroke</span>
+                </div>
+            </section>
+
+            <section class="panel table-panel">
+                <h2 class="panel-title">All Cases — Parameter Breakdown</h2>
+                <div class="table-scroll">
+                    <table id="allCasesTable" class="full-cases-table">
+                        <thead>
+                            <tr class="cat-header">
+                                <th class="cat-idx" rowspan="2">#</th>
+                                <th colspan="4" class="cat-shared">Shared Geometry</th>
+                                <th colspan="4" class="cat-B">ROM — B-side</th>
+                                <th colspan="4" class="cat-slider">Motion — Slider &amp; A-crank</th>
+                            </tr>
+                            <tr class="param-header">
+                                <th class="cat-shared"><span class="sym">r<sub>B</sub></span><span class="name">B crank arm</span></th>
+                                <th class="cat-shared"><span class="sym">l<sub>B</sub></span><span class="name">B coupler</span></th>
+                                <th class="cat-shared"><span class="sym">l<sub>A</sub></span><span class="name">A coupler</span></th>
+                                <th class="cat-shared"><span class="sym">d</span><span class="name">pivot spacing</span></th>
+
+                                <th class="cat-B"><span class="sym">Δφ</span><span class="name">range of motion</span></th>
+                                <th class="cat-B"><span class="sym">φ<sub>min</sub></span><span class="name">B angle min</span></th>
+                                <th class="cat-B"><span class="sym">φ<sub>max</sub></span><span class="name">B angle max</span></th>
+                                <th class="cat-B"><span class="sym">φ<sub>ctr</sub></span><span class="name">B angle center</span></th>
+
+                                <th class="cat-slider"><span class="sym">x<sub>L</sub></span><span class="name">slider left bound</span></th>
+                                <th class="cat-slider"><span class="sym">x<sub>R</sub></span><span class="name">slider right bound</span></th>
+                                <th class="cat-slider"><span class="sym">stroke</span><span class="name">slider travel</span></th>
+                                <th class="cat-slider"><span class="sym">r<sub>A</sub></span><span class="name">A crank arm</span></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ============== RIGHT: REFERENCE + OVERRIDES ============== -->
+        <aside class="panel params-panel">
+            <section class="reference-section">
+                <h3>Parameter Reference</h3>
+                <svg class="reference-diagram" viewBox="0 0 320 230" xmlns="http://www.w3.org/2000/svg" aria-label="Mechanism parameter reference diagram">
+                    <defs>
+                        <marker id="arrHead" viewBox="0 0 10 10" refX="9" refY="5"
+                                markerWidth="5" markerHeight="5" orient="auto">
+                            <path d="M 0 0 L 10 5 L 0 10 z" fill="#666" />
+                        </marker>
+                    </defs>
+
+                    <!-- rail (extended line) -->
+                    <line x1="18" y1="118" x2="302" y2="118" stroke="#8a93a6" stroke-width="1.4"/>
+
+                    <!-- B envelope circle (main big arc, kept) -->
+                    <circle cx="68" cy="118" r="38" fill="none" stroke="#e65a1a" stroke-opacity="0.35" stroke-dasharray="3,3"/>
+
+                    <!-- B crank arm -->
+                    <line x1="68" y1="118" x2="48" y2="150" stroke="#e65a1a" stroke-width="3.5"/>
+                    <!-- B coupler -->
+                    <line x1="48" y1="150" x2="158" y2="118" stroke="#e65a1a" stroke-width="2" opacity="0.75"/>
+                    <!-- B pin + pivot -->
+                    <circle cx="68" cy="118" r="3.5" fill="#111"/>
+                    <circle cx="48" cy="150" r="3" fill="#e65a1a" stroke="#333" stroke-width="0.8"/>
+
+                    <!-- Small origin axes at O_B (+x right, +y up) -->
+                    <line x1="68" y1="118" x2="84" y2="118" stroke="#666" stroke-width="0.9" marker-end="url(#arrHead)"/>
+                    <line x1="68" y1="118" x2="68" y2="102" stroke="#666" stroke-width="0.9" marker-end="url(#arrHead)"/>
+                    <text x="87" y="121" font-family="sans-serif" font-size="9" fill="#666" font-style="italic">x</text>
+                    <text x="65" y="99" font-family="sans-serif" font-size="9" fill="#666" font-style="italic" text-anchor="middle">y</text>
+
+                    <!-- B phi angle arc -->
+                    <path d="M 86 118 A 18 18 0 0 1 58 134" fill="none" stroke="#e65a1a" stroke-width="1.4"/>
+                    <!-- phi_B label -->
+                    <text x="90" y="140" font-family="sans-serif" font-size="11" fill="#e65a1a" font-weight="600">φ<tspan font-size="8" dy="2">B</tspan></text>
+
+                    <!-- Labels for B set -->
+                    <text x="54" y="112" font-family="sans-serif" font-size="10.5" font-weight="700" fill="#1f2937">O<tspan font-size="7.5" dy="2">B</tspan></text>
+                    <text x="44" y="133" font-family="sans-serif" font-size="11" fill="#e65a1a" font-weight="600">r<tspan font-size="8" dy="2">B</tspan></text>
+                    <text x="102" y="128" font-family="sans-serif" font-size="11" fill="#e65a1a" font-weight="600">l<tspan font-size="8" dy="2">B</tspan></text>
+
+                    <!-- A envelope circle -->
+                    <circle cx="252" cy="118" r="24" fill="none" stroke="#27a042" stroke-opacity="0.35" stroke-dasharray="3,3"/>
+
+                    <!-- A crank arm (pointing lower-left toward slider, theta ~ 155 deg) -->
+                    <line x1="252" y1="118" x2="230" y2="128" stroke="#27a042" stroke-width="3.5"/>
+                    <!-- A coupler -->
+                    <line x1="230" y1="128" x2="170" y2="118" stroke="#27a042" stroke-width="2" opacity="0.75"/>
+                    <!-- A pin + pivot -->
+                    <circle cx="252" cy="118" r="3.5" fill="#111"/>
+                    <circle cx="230" cy="128" r="3" fill="#27a042" stroke="#333" stroke-width="0.8"/>
+
+                    <!-- theta_A angle arc -->
+                    <path d="M 270 118 A 17 17 0 0 1 238 123" fill="none" stroke="#27a042" stroke-width="1.4"/>
+                    <text x="274" y="128" font-family="sans-serif" font-size="11" fill="#27a042" font-weight="600">θ<tspan font-size="8" dy="2">A</tspan></text>
+
+                    <!-- Labels for A set -->
+                    <text x="257" y="112" font-family="sans-serif" font-size="10.5" font-weight="700" fill="#1f2937">O<tspan font-size="7.5" dy="2">A</tspan></text>
+                    <text x="238" y="142" font-family="sans-serif" font-size="11" fill="#27a042" font-weight="600">r<tspan font-size="8" dy="2">A</tspan></text>
+                    <text x="188" y="114" font-family="sans-serif" font-size="11" fill="#27a042" font-weight="600">l<tspan font-size="8" dy="2">A</tspan></text>
+
+                    <!-- slider block -->
+                    <rect x="155" y="112" width="16" height="12" fill="#2558d6" stroke="#17378a" stroke-width="0.8" rx="2"/>
+
+                    <!-- d dimension line -->
+                    <line x1="68" y1="170" x2="252" y2="170" stroke="#666" stroke-width="1"/>
+                    <line x1="68" y1="165" x2="68" y2="175" stroke="#666" stroke-width="1"/>
+                    <line x1="252" y1="165" x2="252" y2="175" stroke="#666" stroke-width="1"/>
+                    <text x="160" y="184" font-family="sans-serif" font-size="11" fill="#3a425a" text-anchor="middle" font-weight="600">d <tspan font-size="10" font-weight="400" fill="#6b7280">(pivot spacing)</tspan></text>
+
+                    <!-- rail dimension -->
+                    <line x1="106" y1="196" x2="252" y2="196" stroke="#2558d6" stroke-width="1"/>
+                    <line x1="106" y1="191" x2="106" y2="201" stroke="#2558d6" stroke-width="1"/>
+                    <line x1="252" y1="191" x2="252" y2="201" stroke="#2558d6" stroke-width="1"/>
+                    <text x="180" y="210" font-family="sans-serif" font-size="11" fill="#2558d6" text-anchor="middle" font-weight="600">rail length <tspan font-size="10" font-weight="400" fill="#6b7280">(d − r<tspan font-size="7.5" dy="2">B</tspan><tspan font-size="10" dy="-2">)</tspan></tspan></text>
+
+                </svg>
+                <div class="ref-legend">
+                    <span class="lg-item"><span class="sw" style="background:#e65a1a"></span>B-set (left)</span>
+                    <span class="lg-item"><span class="sw" style="background:#27a042"></span>A-set (right)</span>
+                    <span class="lg-item"><span class="sw" style="background:#2558d6"></span>Slider / rail</span>
+                </div>
+            </section>
+
+            <section class="param-group">
+                <h3>Global (shared)</h3>
+                <label>
+                    <span>r<sub>B</sub></span>
+                    <input type="number" id="ovr_rB" step="0.001" disabled />
+                </label>
+                <label>
+                    <span>l<sub>B</sub></span>
+                    <input type="number" id="ovr_lB" step="0.001" disabled />
+                </label>
+                <label>
+                    <span>l<sub>A</sub></span>
+                    <input type="number" id="ovr_lA" step="0.001" disabled />
+                </label>
+                <label>
+                    <span>d <small>(pivot spacing)</small></span>
+                    <input type="number" id="ovr_d" step="0.001" disabled />
+                </label>
+                <label class="readonly-row">
+                    <span>rail length (d − r<sub>B</sub>)</span>
+                    <output id="rd_rail">—</output>
+                </label>
+            </section>
+
+            <section class="param-group">
+                <h3>Selected Case (override)</h3>
+                <label>
+                    <span>r<sub>A</sub></span>
+                    <input type="number" id="ovr_rA" step="0.001" disabled />
+                </label>
+                <label>
+                    <span>φ<sub>min</sub> (deg)</span>
+                    <input type="number" id="ovr_phiMin" step="0.1" disabled />
+                </label>
+                <label>
+                    <span>φ<sub>max</sub> (deg)</span>
+                    <input type="number" id="ovr_phiMax" step="0.1" disabled />
+                </label>
+                <label class="readonly-row">
+                    <span>Δφ (deg)</span>
+                    <output id="rd_dphi">—</output>
+                </label>
+                <label class="readonly-row">
+                    <span>φ<sub>center</sub> (deg)</span>
+                    <output id="rd_center">—</output>
+                </label>
+                <label class="readonly-row">
+                    <span>stroke</span>
+                    <output id="rd_stroke">—</output>
+                </label>
+            </section>
+
+            <button id="resetBtn" class="secondary-btn" disabled>Reset to Suggested</button>
+        </aside>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
