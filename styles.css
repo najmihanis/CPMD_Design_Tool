@@ -502,6 +502,263 @@ input[type="number"]:disabled {
 }
 .ref-legend .sw { width: 10px; height: 10px; border-radius: 2px; }
 
+/* ================= MAIN TABS (center column) ================= */
+.main-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: #eef1f6;
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    width: fit-content;
+    box-shadow: var(--shadow);
+}
+
+.main-tab {
+    padding: 8px 18px;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--ink-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    user-select: none;
+    letter-spacing: 0.01em;
+}
+
+.main-tab:hover { color: var(--ink); }
+.main-tab.active {
+    background: #fff;
+    color: var(--accent);
+    border-color: var(--panel-border);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.tab-content { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.tab-content[hidden] { display: none; }
+
+/* ================= MATH PANEL ================= */
+.math-panel {
+    /* KaTeX provides Computer Modern-family fonts for equations.
+       Body text uses a readable serif that complements scientific-style math. */
+    font-family: "Georgia", "Times New Roman", "Nimbus Roman No9 L", serif;
+    color: var(--ink);
+    line-height: 1.6;
+    font-size: 14.5px;
+    padding: 20px 26px 28px;
+}
+
+.math-panel .panel-title {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.math-panel .math-lede {
+    font-size: 14.5px;
+    color: var(--ink-soft);
+    border-left: 3px solid var(--accent);
+    padding: 10px 0 10px 14px;
+    margin: 6px 0 22px;
+    background: linear-gradient(90deg, var(--accent-soft), transparent 80%);
+    border-radius: 0 6px 6px 0;
+}
+
+.math-section {
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px dashed var(--panel-border);
+}
+.math-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+.math-section h3 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 8px 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--accent);
+    display: inline-block;
+}
+
+.math-section h4 {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin: 18px 0 6px;
+    letter-spacing: 0.01em;
+}
+
+.math-panel p { margin: 8px 0; }
+
+.math-panel code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.88em;
+    padding: 1px 5px;
+    background: #eef1f6;
+    border-radius: 4px;
+    color: var(--ink-soft);
+}
+
+/* Equation block — centred display math with subtle backdrop */
+.eqn {
+    margin: 12px 0 14px;
+    padding: 10px 12px;
+    background: #fafbfd;
+    border: 1px solid var(--panel-border);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    overflow-x: auto;
+    text-align: center;
+    font-size: 1.04em;
+}
+
+/* KaTeX fine-tuning inside math panel */
+.math-panel .katex { font-size: 1.06em; }
+.math-panel .katex-display { margin: 4px 0; }
+.math-panel .katex-display > .katex { font-size: 1.15em; }
+
+/* Variable table (used in section 1) */
+.var-table {
+    margin: 14px 0 4px;
+    overflow-x: auto;
+}
+.var-table table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.var-table th, .var-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--panel-border);
+    text-align: left;
+    vertical-align: middle;
+}
+.var-table thead th {
+    background: #eef1f6;
+    color: var(--ink-soft);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.var-table tbody tr:last-child td { border-bottom: none; }
+.var-table tbody tr:hover td { background: #fafbfd; }
+
+/* Constraint list */
+.constraint-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin: 12px 0 18px;
+}
+.constraint {
+    padding: 12px 14px;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    background: #fafbfd;
+}
+.constraint-title {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    color: var(--ink);
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+.constraint .eqn {
+    margin: 8px 0 6px;
+    background: #fff;
+    border-left-color: var(--B-color);
+}
+.constraint p {
+    margin: 4px 0 0;
+    color: var(--ink-soft);
+    font-size: 13.5px;
+}
+
+/* Takeaway / insight callouts */
+.takeaway, .insight {
+    margin: 16px 0 10px;
+    padding: 12px 14px 12px 16px;
+    border-radius: 8px;
+    border-left: 4px solid;
+    font-size: 13.5px;
+}
+.takeaway {
+    background: #fff8e6;
+    border-left-color: #d97706;
+}
+.insight {
+    background: #e8f4ff;
+    border-left-color: var(--accent);
+}
+.takeaway p, .insight p { margin: 0; color: var(--ink); }
+.tk-label {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    color: var(--ink-soft);
+}
+.takeaway .tk-label { color: #b45309; }
+.insight  .tk-label { color: var(--accent); }
+
+/* Summary flow diagram */
+.flow-diagram {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.flow-step {
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 12px;
+    padding: 12px 14px 12px 10px;
+    background: #fafbfd;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    align-items: flex-start;
+}
+.flow-step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.flow-step-title {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--ink);
+    margin-bottom: 2px;
+}
+.flow-step-text {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+}
+
 /* ================= RESPONSIVE ================= */
 @media (max-width: 1280px) {
     .dashboard { grid-template-columns: 280px 1fr; }

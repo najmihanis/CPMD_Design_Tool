@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dual Crank-Slider Design Tool</title>
+
+    <!-- KaTeX — scientific-paper-quality math typography (Computer Modern family) -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -133,8 +142,19 @@
             <p id="searchMsg" class="search-msg"></p>
         </aside>
 
-        <!-- ============== CENTER: CANVAS + TABLE ============== -->
+        <!-- ============== CENTER: CANVAS + TABLE / MATH TAB ============== -->
         <div class="center-column">
+
+            <!-- top-level tab switcher -->
+            <div class="main-tabs" role="tablist">
+                <button class="main-tab active" data-tab="visualization"
+                        role="tab" aria-selected="true">Visualization</button>
+                <button class="main-tab" data-tab="math"
+                        role="tab" aria-selected="false">Math &amp; Logic</button>
+            </div>
+
+            <!-- ============ TAB 1: VISUALIZATION ============ -->
+            <div class="tab-content active" id="tab-visualization" role="tabpanel">
             <section class="panel canvas-panel">
                 <div class="canvas-header">
                     <h2 class="panel-title">Mechanism Visualization</h2>
@@ -198,6 +218,388 @@
                     </table>
                 </div>
             </section>
+            </div>
+            <!-- end tab-visualization -->
+
+            <!-- ============ TAB 2: MATH & LOGIC ============ -->
+            <div class="tab-content" id="tab-math" role="tabpanel" hidden>
+                <section class="panel math-panel">
+                    <h2 class="panel-title">How the Tool Chooses an Optimum Design</h2>
+
+                    <p class="math-lede">
+                        The design tool works in three stages: (1) model the mechanism, (2) translate desired
+                        ranges of motion (ROM) into slider strokes, and (3) search a grid of candidate
+                        geometries, filtering by physical constraints and scoring by a cost function.
+                        The sections below walk through each stage, with equations written the same way
+                        they would appear in a kinematics paper.
+                    </p>
+
+                    <!-- ========= SECTION 1 ========= -->
+                    <section class="math-section">
+                        <h3>1 &nbsp; Mechanism Geometry &amp; Kinematics</h3>
+
+                        <p>
+                            The device is a <em>dual crank&ndash;slider</em>: two cranks share a common slider
+                            that rides along a straight rail between the pivots $O_B$ and $O_A$. Crank B
+                            (driven side, on the left) and crank A (driving side, on the right) are linked
+                            by the single&nbsp;slider.
+                        </p>
+
+                        <p><strong>Sign convention.</strong>
+                            At each pivot, an angle of $0^\circ$ points along the positive $x$&ndash;axis
+                            (to the right), and angles increase <em>clockwise</em>. The mechanism operates
+                            in the <em>lower</em> semicircle, so the pin height is
+                            $y = -r\sin\phi$.</p>
+
+                        <h4>1.1&nbsp; Crank B — slider position as a function of crank angle</h4>
+                        <p>
+                            Measuring along the rail from $O_B$ toward $O_A$, the slider position $x_B$
+                            satisfies the classical slider&ndash;crank equation:
+                        </p>
+                        <div class="eqn">
+                            $$ x_B(\phi) \;=\; r_B\cos\phi \;+\; \sqrt{\,l_B^{\,2} \;-\; r_B^{\,2}\sin^{2}\phi\,} $$
+                        </div>
+                        <p>
+                            where $r_B$ is the crank&ndash;arm length and $l_B$ is the coupler length.
+                            Given an angle $\phi\in[\phi_{\min},\,\phi_{\max}]$, $x_B(\phi)$ is obtained
+                            in closed form &mdash; no iteration needed.
+                        </p>
+
+                        <h4>1.2&nbsp; Crank A — the slider is <em>left</em> of the pivot</h4>
+                        <p>
+                            Unlike crank B, the slider lies on the <em>negative&ndash;x</em> side of $O_A$
+                            (it sits <em>between</em> $O_B$ and $O_A$). With $O_A$ placed at $x = d$, the
+                            crank&ndash;pin location is
+                        </p>
+                        <div class="eqn">
+                            $$ \big(p_x,\,p_y\big) \;=\; \big(d + r_A\cos\theta_A,\; -r_A\sin\theta_A\big) $$
+                        </div>
+                        <p>
+                            Because the slider is on the <em>left</em> of the pin, the rail intersection is
+                            taken with the <em>minus</em> branch:
+                        </p>
+                        <div class="eqn">
+                            $$ x_A(\theta_A) \;=\; p_x \;-\; \sqrt{\,l_A^{\,2} \;-\; p_y^{\,2}\,} $$
+                        </div>
+
+                        <h4>1.3&nbsp; Coupling constraint</h4>
+                        <p>
+                            Both cranks must agree on the slider's location at every instant:
+                        </p>
+                        <div class="eqn">
+                            $$ \boxed{\;x_A(\theta_A) \;=\; x_B(\phi)\;} $$
+                        </div>
+                        <p>
+                            Crank A's angle $\theta_A$ is therefore not a free parameter &mdash; it is
+                            determined by $\phi$ through the slider. Because $x_A(\theta_A)$ is not
+                            analytically invertible in $\theta_A$, the tool solves it numerically
+                            with a bracketed scan over $[0^\circ,\,360^\circ)$ followed by bisection,
+                            choosing the root nearest a preferred pose $\theta_A^{\text{pref}}$.
+                        </p>
+
+                        <div class="var-table">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Symbol</th>
+                                        <th>Meaning</th>
+                                        <th>Role</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td>$r_B,\;l_B$</td><td>B crank arm, B coupler</td><td>free (grid search)</td></tr>
+                                    <tr><td>$r_A,\;l_A$</td><td>A crank arm, A coupler</td><td>derived from $x_B$ limits</td></tr>
+                                    <tr><td>$d$</td><td>pivot spacing $O_B\!\to\!O_A$</td><td>derived to satisfy motion range</td></tr>
+                                    <tr><td>$\phi$</td><td>B crank angle</td><td>input / ROM variable</td></tr>
+                                    <tr><td>$\theta_A$</td><td>A crank angle</td><td>derived by slider coupling</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- ========= SECTION 2 ========= -->
+                    <section class="math-section">
+                        <h3>2 &nbsp; From ROM to Stroke</h3>
+
+                        <p>
+                            On the B&ndash;side, the <em>range of motion</em> (ROM) is the angular sweep
+                            of crank B:
+                            $\Delta\phi = \phi_{\max} - \phi_{\min}$. The corresponding <em>stroke</em>
+                            of the slider is the distance it travels while $\phi$ sweeps through the ROM.
+                        </p>
+
+                        <div class="eqn">
+                            $$ \text{stroke} \;=\; \max_{\phi \in [\phi_{\min},\phi_{\max}]} x_B(\phi)
+                                            \;-\; \min_{\phi \in [\phi_{\min},\phi_{\max}]} x_B(\phi) $$
+                        </div>
+
+                        <p>
+                            Since $x_B(\phi)$ is smooth and unimodal within the feasible domain, the
+                            extremes usually occur either at the endpoints ($\phi_{\min}$ and $\phi_{\max}$)
+                            or at an interior critical point where $x_B'(\phi)=0$. The tool
+                            evaluates $x_B$ at both endpoints and, where relevant, at the interior
+                            extremum, keeping the widest interval.
+                        </p>
+
+                        <p><strong>Centre angle.</strong>
+                            $\phi_c = \tfrac{1}{2}(\phi_{\min} + \phi_{\max})$ is the midpoint of the ROM window.
+                            For a given $\Delta\phi$, sliding $\phi_c$ left or right along the feasible arc
+                            changes <em>both</em> the stroke magnitude and where the slider's motion sits along
+                            the rail &mdash; two candidates with the same $\Delta\phi$ can produce very different
+                            strokes depending on $\phi_c$.</p>
+
+                        <h4>2.1&nbsp; Discretising the ROM envelope</h4>
+                        <p>
+                            The user specifies a smallest ROM $\Delta\phi_{\min}$ and a largest ROM
+                            $\Delta\phi_{\max}$. The tool linearly spaces $N$ values between them:
+                        </p>
+                        <div class="eqn">
+                            $$ \Delta\phi_i \;=\; \Delta\phi_{\min} \;+\; \frac{i-1}{N-1}\,
+                                 \big(\Delta\phi_{\max} - \Delta\phi_{\min}\big),
+                               \quad i = 1,\,2,\,\dots,\,N $$
+                        </div>
+                        <p>Each $\Delta\phi_i$ will receive its own optimised ROM window
+                            $[\phi_{\min,i},\,\phi_{\max,i}]$ and an associated $r_{A,i}$ so the
+                            A&ndash;crank can deliver that stroke.</p>
+                    </section>
+
+                    <!-- ========= SECTION 3 ========= -->
+                    <section class="math-section">
+                        <h3>3 &nbsp; Constraints &amp; Search</h3>
+
+                        <p>
+                            For each candidate pair $(r_B,\,\lambda_B)$ &mdash; where
+                            $\lambda_B = l_B / r_B$ is the coupler ratio &mdash; the tool checks a
+                            series of hard feasibility constraints, derives the remaining geometry,
+                            and finally scores the candidate by a cost function.
+                        </p>
+
+                        <h4>3.1&nbsp; Feasibility constraints</h4>
+
+                        <div class="constraint-list">
+                            <div class="constraint">
+                                <div class="constraint-title">Clearance (B coupler clears its own crank)</div>
+                                <div class="eqn">$$ l_B \;>\; 2\,r_B \;+\; m_c $$</div>
+                                <p>Prevents the coupler from colliding with the crank; $m_c$ is a margin
+                                    (<code>marginFactor</code> $\times\,r_B$).</p>
+                            </div>
+
+                            <div class="constraint">
+                                <div class="constraint-title">Hard&ndash;stop window</div>
+                                <div class="eqn">$$ \phi_{\text{stop,min}} \;\le\; \phi_{\min},\,\phi_{\max} \;\le\; \phi_{\text{stop,max}} $$</div>
+                                <p>Every ROM window must live inside the user&rsquo;s allowable sector for $\phi$.</p>
+                            </div>
+
+                            <div class="constraint">
+                                <div class="constraint-title">A&ndash;crank feasibility</div>
+                                <div class="eqn">$$ r_A \;\le\; r_B $$</div>
+                                <p>The A&ndash;crank cannot be larger than the B&ndash;crank (geometric
+                                    requirement of the closed loop).</p>
+                            </div>
+
+                            <div class="constraint">
+                                <div class="constraint-title">Motion compatibility on the rail</div>
+                                <div class="eqn">
+                                    $$ l_A + l_B + r_{A,\max} - r_B \;\le\; d \;\le\; l_A + l_B - r_{A,\max} + r_B $$
+                                </div>
+                                <p>$d$ must be large enough that the slider can reach its extreme
+                                    positions, but small enough that the couplers don&rsquo;t have to
+                                    overextend.</p>
+                            </div>
+                        </div>
+
+                        <h4>3.2&nbsp; Per&ndash;case objective: placing the ROM window</h4>
+                        <p>
+                            Within each candidate $(r_B,\,\lambda_B)$, the tool slides the ROM window of
+                            width $\Delta\phi_i$ along the feasible sector and picks the placement that
+                            minimises
+                        </p>
+
+                        <div class="eqn">
+                            $$ J_i \;=\;
+                                \begin{cases}
+                                    w_{\text{baseline}}\,\big|\phi_{c,i} - \phi_{\text{baseline}}\big|
+                                        \;+\; w_{\text{stroke}}\,\Delta x_i, & i = 1 \text{ (smallest ROM)}\\[4pt]
+                                    w_{\text{prev}}\,\big|\phi_{c,i} - \phi_{c,i-1}\big|
+                                        \;+\; w_{\text{stroke}}\,\Delta x_i, & i > 1
+                                \end{cases} $$
+                        </div>
+
+                        <p>
+                            The smallest&ndash;ROM case $(i=1)$ is anchored near a user&ndash;chosen
+                            $\phi_{\text{baseline}}$ so that precision motion lives around a sensible
+                            operating point. Subsequent, larger ROM cases stay close to the previous
+                            centre angle $\phi_{c,i-1}$ &mdash; this keeps the <em>family</em> of ROM
+                            windows concentric and avoids discontinuous jumps in $\phi_c$ as the ROM grows.
+                        </p>
+
+                        <div class="takeaway">
+                            <div class="tk-label">Intuition</div>
+                            <p>
+                                Two penalties pull in opposite directions: the <em>position</em> term
+                                rewards a window centred near a target angle, and the <em>stroke</em>
+                                term rewards a short slider travel. The weights
+                                $w_{\text{baseline}}$, $w_{\text{prev}}$, $w_{\text{stroke}}$ let you
+                                dial how much drift in $\phi_c$ is tolerated to get a smaller stroke.
+                            </p>
+                        </div>
+
+                        <h4>3.3&nbsp; Global cost — choosing $(r_B,\,l_B,\,d)$</h4>
+
+                        <p>Once each ROM case has a placed window and a derived $r_{A,i}$, the candidate
+                            is scored by a global cost function:</p>
+
+                        <div class="eqn">
+                            $$ C(r_B,\,\lambda_B) \;=\; d \;+\; 10^{-3}\,\lambda_B \;+\; 10^{-4}\,r_B $$
+                        </div>
+
+                        <p>
+                            The dominant term is $d$: among feasible candidates, the tool prefers the
+                            most <em>compact</em> design. The tiny $\lambda_B$ and $r_B$ terms act as
+                            tie&ndash;breakers that favour shorter couplers and smaller cranks when
+                            $d$ is nearly identical &mdash; keeping the chosen design numerically
+                            stable and reproducible.
+                        </p>
+
+                        <h4>3.4&nbsp; Grid search</h4>
+                        <p>
+                            The full search enumerates
+                            $r_B \in [r_{B,\min},\,r_{B,\max}]$
+                            with step $\Delta r_B$, and
+                            $\lambda_B \in [\lambda_{B,\min},\,\lambda_{B,\max}]$
+                            with step $\Delta\lambda_B$. Each cell is evaluated against the
+                            constraints above; the cell with the smallest $C$ wins.
+                        </p>
+                    </section>
+
+                    <!-- ========= SECTION 4 ========= -->
+                    <section class="math-section">
+                        <h3>4 &nbsp; Behaviour &amp; Trade&ndash;offs</h3>
+
+                        <p>Three knobs dominate the qualitative behaviour of the design:</p>
+
+                        <h4>4.1&nbsp; Crank length $r_B$</h4>
+                        <p>
+                            For a fixed ROM $\Delta\phi$, stroke scales roughly linearly with $r_B$
+                            (to first order, $\Delta x \sim 2\,r_B\sin(\Delta\phi/2)$ when $\phi_c$
+                            is near $90^\circ$). A larger $r_B$ buys stroke at the cost of more
+                            envelope volume and a larger $d$.
+                        </p>
+
+                        <h4>4.2&nbsp; Coupler ratio $\lambda_B = l_B/r_B$</h4>
+                        <p>
+                            A high $\lambda_B$ makes the slider motion more nearly sinusoidal in $\phi$
+                            and keeps transverse forces on the coupler small, but increases the physical
+                            length of the mechanism. A low $\lambda_B$ is compact but
+                            amplifies non&ndash;linearities and transverse loads.
+                        </p>
+
+                        <h4>4.3&nbsp; Centre angle $\phi_c$</h4>
+                        <p>
+                            $\phi_c \approx 90^\circ$ maximises slider sensitivity per degree of
+                            crank rotation; values near $0^\circ$ or $180^\circ$ produce a slow,
+                            near&ndash;stationary slider over part of the ROM (a <em>dwell</em>).
+                            The baseline $\phi_{\text{baseline}}$ input lets you bias the smallest
+                            ROM window toward whichever behaviour you want.
+                        </p>
+
+                        <div class="insight">
+                            <div class="tk-label">Why $d$ is the dominant cost</div>
+                            <p>
+                                In this mechanism family, compactness (small $d$) almost always
+                                tracks with lower manufacturing cost and fewer moving&ndash;mass
+                                issues &mdash; hence the tool optimises $d$ first, then uses
+                                $\lambda_B$ and $r_B$ only as tie&ndash;breakers.
+                            </p>
+                        </div>
+                    </section>
+
+                    <!-- ========= SUMMARY FLOW ========= -->
+                    <section class="math-section">
+                        <h3>Summary Flow</h3>
+                        <p>The complete decision pipeline, top to bottom:</p>
+
+                        <ol class="flow-diagram">
+                            <li class="flow-step">
+                                <div class="flow-step-num">1</div>
+                                <div class="flow-step-body">
+                                    <div class="flow-step-title">User inputs</div>
+                                    <div class="flow-step-text">
+                                        Smallest/largest ROM $\Delta\phi$, hard stops
+                                        $[\phi_{\text{stop,min}},\phi_{\text{stop,max}}]$,
+                                        baseline angle, and grids for $r_B$ and $\lambda_B$.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="flow-step">
+                                <div class="flow-step-num">2</div>
+                                <div class="flow-step-body">
+                                    <div class="flow-step-title">Discretise ROM</div>
+                                    <div class="flow-step-text">
+                                        Produce $N$ target ROMs
+                                        $\Delta\phi_1,\dots,\Delta\phi_N$ linearly between
+                                        $\Delta\phi_{\min}$ and $\Delta\phi_{\max}$.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="flow-step">
+                                <div class="flow-step-num">3</div>
+                                <div class="flow-step-body">
+                                    <div class="flow-step-title">Grid search $(r_B,\lambda_B)$</div>
+                                    <div class="flow-step-text">
+                                        For each cell, apply the clearance and hard&ndash;stop
+                                        constraints; reject infeasible cells.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="flow-step">
+                                <div class="flow-step-num">4</div>
+                                <div class="flow-step-body">
+                                    <div class="flow-step-title">Place ROM windows</div>
+                                    <div class="flow-step-text">
+                                        For each case $i$, minimise $J_i$ to choose
+                                        $[\phi_{\min,i},\phi_{\max,i}]$.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="flow-step">
+                                <div class="flow-step-num">5</div>
+                                <div class="flow-step-body">
+                                    <div class="flow-step-title">Derive $r_{A,i}$ and $d$</div>
+                                    <div class="flow-step-text">
+                                        From each placed window, compute the slider extremes, then
+                                        the A&ndash;crank and pivot&ndash;spacing that satisfy the
+                                        motion&ndash;compatibility bounds.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="flow-step">
+                                <div class="flow-step-num">6</div>
+                                <div class="flow-step-body">
+                                    <div class="flow-step-title">Score with $C$, keep the best</div>
+                                    <div class="flow-step-text">
+                                        Evaluate
+                                        $C = d + 10^{-3}\lambda_B + 10^{-4}r_B$
+                                        and return the $(r_B,\lambda_B)$ with the smallest $C$.
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="flow-step">
+                                <div class="flow-step-num">7</div>
+                                <div class="flow-step-body">
+                                    <div class="flow-step-title">Present &amp; allow override</div>
+                                    <div class="flow-step-text">
+                                        The chosen design populates the visualization and the
+                                        all&ndash;cases table; the user can nudge $r_A$,
+                                        $\phi_{\min}$, $\phi_{\max}$ to explore alternatives live.
+                                    </div>
+                                </div>
+                            </li>
+                        </ol>
+                    </section>
+                </section>
+            </div>
+            <!-- end tab-math -->
         </div>
 
         <!-- ============== RIGHT: REFERENCE + OVERRIDES ============== -->

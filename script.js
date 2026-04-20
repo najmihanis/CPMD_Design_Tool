@@ -1038,6 +1038,74 @@ function step(now) {
 }
 
 // -----------------------------------------------------------------
+// MAIN TABS (Visualization <-> Math & Logic)
+// -----------------------------------------------------------------
+(function setupMainTabs() {
+    const tabs = document.querySelectorAll('.main-tab');
+    const panels = {
+        visualization: document.getElementById('tab-visualization'),
+        math:          document.getElementById('tab-math')
+    };
+    let mathRenderedOnce = false;
+
+    tabs.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const target = btn.dataset.tab;
+            tabs.forEach((b) => {
+                const active = b === btn;
+                b.classList.toggle('active', active);
+                b.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            Object.entries(panels).forEach(([key, el]) => {
+                if (!el) return;
+                const visible = key === target;
+                el.hidden = !visible;
+                el.classList.toggle('active', visible);
+            });
+
+            // If we just switched TO the math tab, ensure equations render.
+            if (target === 'math' && !mathRenderedOnce) {
+                renderMathPanel();
+                mathRenderedOnce = true;
+            }
+
+            // If we just switched BACK to the viz tab, re-sync the canvas
+            // (DPR buffer can get stale if the layout shifted while hidden).
+            if (target === 'visualization') {
+                // Defer to next frame so the newly-visible layout is measured.
+                requestAnimationFrame(() => {
+                    resizeCanvas();
+                    redraw();
+                });
+            }
+        });
+    });
+
+    function renderMathPanel() {
+        // KaTeX auto-render picks up $...$ and $$...$$ across the math panel
+        // and swaps the LaTeX source with scientific-paper-quality typography.
+        const panel = panels.math;
+        if (!panel || typeof window.renderMathInElement !== 'function') {
+            // If KaTeX hasn't loaded yet, retry shortly.
+            setTimeout(renderMathPanel, 120);
+            return;
+        }
+        try {
+            window.renderMathInElement(panel, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true  },
+                    { left: '$',  right: '$',  display: false }
+                ],
+                throwOnError: false,
+                strict: 'ignore'
+            });
+        } catch (err) {
+            console.warn('KaTeX render failed:', err);
+        }
+    }
+})();
+
+// -----------------------------------------------------------------
 // Init
 // -----------------------------------------------------------------
 enableOverrideInputs(false);
